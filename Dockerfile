@@ -1,5 +1,5 @@
 # Stage 1: Build the application using .NET 10 SDK
-FROM ://microsoft.com AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
 # Copy the solution and project folders directly from the root
