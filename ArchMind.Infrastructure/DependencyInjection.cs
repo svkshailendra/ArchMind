@@ -1,8 +1,7 @@
 ﻿using ArchMind.Application.Architectures;
 using ArchMind.Infrastructure.AI;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options; 
+using Microsoft.Extensions.DependencyInjection; 
 
 namespace ArchMind.Infrastructure
 {
@@ -11,7 +10,10 @@ namespace ArchMind.Infrastructure
         public static IServiceCollection AddInfrastructure(
         this IServiceCollection services,
         IConfiguration configuration)
-        { 
+        {
+
+            services.Configure<AIOptions>(
+        configuration.GetSection(AIOptions.SectionName));
 
             services
             .AddOptions<OllamaOptions>()
@@ -30,7 +32,20 @@ namespace ArchMind.Infrastructure
             "Ollama timeout must be between 10 and 600 seconds.")
             .ValidateOnStart();
 
-            services.AddScoped<ISolutionArchitect, OllamaSolutionArchitect>();
+            services.Configure<GroqOptions>(
+        options =>
+        {
+            configuration
+                .GetSection(GroqOptions.SectionName)
+                .Bind(options);
+
+            options.ApiKey =
+                configuration["Groq:ApiKey"]
+                ?? configuration["GROQ_API_KEY"]
+                ?? string.Empty;
+        });
+
+            services.AddScoped<ISolutionArchitect, AiSolutionArchitect>();
 
             return services;
         }

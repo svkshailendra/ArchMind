@@ -2,16 +2,18 @@
 using ArchMind.Application.Common.Exceptions;
 using ArchMind.Domain.Architectures;
 using Microsoft.Agents.AI;
+using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using OllamaSharp;
+using OpenAI;
+using System.ClientModel;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Microsoft.Extensions.Options;
-using Microsoft.Extensions.AI;
-using OllamaSharp;
 
 namespace ArchMind.Infrastructure.AI
 {
-    public sealed class OllamaSolutionArchitect : ISolutionArchitect
+    public sealed class AiSolutionArchitect : ISolutionArchitect
     {
         private const string AgentInstructions = """
 You are ArchiMind, a pragmatic senior solution architect.
@@ -46,14 +48,21 @@ Follow these rules:
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
         };
 
-        private readonly OllamaOptions _options;
-        private readonly ILogger<OllamaSolutionArchitect> _logger;
+        private readonly OllamaOptions _ollamaOptions;
+        private readonly ILogger<AiSolutionArchitect> _logger; 
+        private readonly AIOptions _aiOptions;
+        private readonly GroqOptions _groqOptions;
 
-        public OllamaSolutionArchitect(
-        IOptions<OllamaOptions> options,
-        ILogger<OllamaSolutionArchitect> logger)
+
+        public AiSolutionArchitect(
+        IOptions<AIOptions> aiOptions,
+            IOptions<OllamaOptions> ollamaOptions,
+            IOptions<GroqOptions> groqOptions,
+            ILogger<AiSolutionArchitect> logger)
         {
-            _options = options.Value;
+            _aiOptions = aiOptions.Value;
+            _ollamaOptions = ollamaOptions.Value;
+            _groqOptions = groqOptions.Value;
             _logger = logger;
         }
 
@@ -63,9 +72,12 @@ Follow these rules:
         {
             ValidateRequest(request);
 
+            var timeoutSeconds = GetTimeoutSeconds();
+
+
             using var timeoutSource =
             new CancellationTokenSource(
-            TimeSpan.FromSeconds(_options.TimeoutSeconds));
+            TimeSpan.FromSeconds(timeoutSeconds));
 
             using var linkedSource =
             CancellationTokenSource.CreateLinkedTokenSource(
@@ -74,19 +86,27 @@ Follow these rules:
 
             try
             {
-                var chatClient = new OllamaApiClient(
-                new Uri(_options.Endpoint),
-                _options.Model);
+                //var chatClient = new OllamaApiClient(
+                //new Uri(_options.Endpoint),
+                //_options.Model);
 
-                AIAgent agent = chatClient.AsAIAgent(
-                instructions: AgentInstructions,
-                name: "SolutionArchitectAgent");
+                //AIAgent agent = chatClient.AsAIAgent(
+                //instructions: AgentInstructions,
+                //name: "SolutionArchitectAgent");
+
+                //var prompt = BuildPrompt(request);
+
+                //_logger.LogInformation(
+                //"Generating architecture proposal using model {Model}",
+                //_options.Model);
+
+                var agent = CreateAgent();
 
                 var prompt = BuildPrompt(request);
 
                 _logger.LogInformation(
-                "Generating architecture proposal using model {Model}",
-                _options.Model);
+                    "Generating architecture proposal using provider {Provider}",
+                    _aiOptions.Provider);
 
                 var response = await agent.RunAsync(
                 prompt,
@@ -102,7 +122,7 @@ Follow these rules:
             {
                 throw new ArchitectureGenerationException(
                 $"Architecture generation exceeded the " +
-                $"{_options.TimeoutSeconds}-second timeout.");
+                $"{timeoutSeconds}-second timeout.");
             }
             catch (OperationCanceledException)
             {
@@ -115,14 +135,13 @@ Follow these rules:
             catch (HttpRequestException exception)
             {
                 _logger.LogError(
-                exception,
-                "Unable to connect to Ollama at {Endpoint}",
-                _options.Endpoint);
+                    exception,
+                    "Unable to connect to AI provider {Provider}",
+                    _aiOptions.Provider);
 
                 throw new ArchitectureGenerationException(
-                "Unable to connect to Ollama. Ensure Ollama is running " +
-                $"at {_options.Endpoint} and model '{_options.Model}' is installed.",
-                exception);
+                    $"Unable to connect to AI provider '{_aiOptions.Provider}'.",
+                    exception);
             }
             catch (Exception exception)
             {
@@ -134,6 +153,68 @@ Follow these rules:
                 "The architecture proposal could not be generated.",
                 exception);
             }
+        }
+
+        private AIAgent CreateAgent()
+        {
+            if (_aiOptions.Provider.Equals(
+                "Groq",
+                StringComparison.OrdinalIgnoreCase))
+            {
+                return CreateGroqAgent();
+            }
+
+            return CreateOllamaAgent();
+        }
+
+        private AIAgent CreateOllamaAgent()
+        {
+            var chatClient = new OllamaApiClient(
+                new Uri(_ollamaOptions.Endpoint),
+                _ollamaOptions.Model);
+
+            return chatClient.AsAIAgent(
+                instructions: AgentInstructions,
+                name: "SolutionArchitectAgent");
+        }
+
+        private AIAgent CreateGroqAgent()
+        {
+            if (string.IsNullOrWhiteSpace(_groqOptions.ApiKey))
+            {
+                throw new ArchitectureGenerationException(
+                    "Groq API key is not configured.");
+            }
+
+            var credential = new ApiKeyCredential(
+                _groqOptions.ApiKey);
+
+            var openAIClient = new OpenAIClient(
+                credential,
+                new OpenAIClientOptions
+                {
+                    Endpoint = new Uri(_groqOptions.Endpoint)
+                });
+
+            var chatClient = openAIClient
+                .GetChatClient(_groqOptions.Model)
+                .AsIChatClient();
+
+            return chatClient.AsAIAgent(
+                instructions: AgentInstructions,
+                name: "SolutionArchitectAgent");
+        }
+
+        private int GetTimeoutSeconds()
+        {
+            if (_aiOptions.Provider.Equals(
+                "Groq",
+                StringComparison.OrdinalIgnoreCase))
+            {
+                return _groqOptions.TimeoutSeconds;
+            }
+
+            return _ollamaOptions.TimeoutSeconds;
         }
 
         private static string BuildPrompt(ArchitectureRequest request)
