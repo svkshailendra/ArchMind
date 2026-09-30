@@ -1,0 +1,125 @@
+﻿@using ArchMind.Domain.Architectures
+
+<section class="architecture-result">
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <h2 class="h4">Architecture summary</h2>
+            <p class="mb-0">@Proposal.Summary</p>
+        </div>
+    </div>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <h2 class="h4">Components</h2>
+
+            <div class="table-responsive">
+                <table class="table table-striped align-middle">
+                    <thead>
+                        <tr>
+                            <th>Component</th>
+                            <th>Responsibility</th>
+                            <th>Technology</th>
+                            <th>Rationale</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var component in Proposal.Components)
+                        {
+                            <tr>
+                                <td class="fw-semibold">@component.Name</td>
+                                <td>@component.Responsibility</td>
+                                <td>@component.Technology</td>
+                                <td>@component.Rationale</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    @if (Proposal.Relationships.Count > 0)
+    {
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h2 class="h4">Architecture relationships</h2>
+
+                <div class="table-responsive">
+                    <table class="table table-striped align-middle">
+                        <thead>
+                            <tr>
+                                <th>From</th>
+                                <th>To</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            @foreach (var relationship in Proposal.Relationships)
+                            {
+                                <tr>
+                                    <td class="fw-semibold">
+                                        @relationship.From
+                                    </td>
+
+                                    <td class="fw-semibold">
+                                        @relationship.To
+                                    </td>
+
+                                    <td>
+                                        @relationship.Description
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    }
+
+    <ResultList Title="Requirements"
+                Items="Proposal.Requirements" />
+
+    <ResultList Title="Security considerations"
+                Items="Proposal.SecurityConsiderations" />
+
+    <ResultList Title="Scalability considerations"
+                Items="Proposal.ScalabilityConsiderations" />
+
+    <ResultList Title="Risks"
+                Items="Proposal.Risks"
+                CssClass="border-warning" />
+
+    <ResultList Title="Assumptions"
+                Items="Proposal.Assumptions"
+                CssClass="border-info" />
+
+    @* <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <h2 class="h4">Mermaid architecture diagram</h2>
+
+            <p class="text-secondary">
+                Diagram preview will be added after the core generation
+                flow is stable.
+            </p>
+
+            <pre class="diagram-source"><code>@Proposal.MermaidDiagram</code></pre>
+        </div>
+    </div> *@
+    @if (!string.IsNullOrWhiteSpace(Proposal.MermaidDiagram))
+    {
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h2 class="h4">Architecture diagram</h2>
+
+                <MermaidDiagram Diagram="@Proposal.MermaidDiagram" />
+            </div>
+        </div>
+    }
+</section>
+
+@code {
+    [Parameter, EditorRequired]
+    public required ArchitectureProposal Proposal { get; set; }
+}

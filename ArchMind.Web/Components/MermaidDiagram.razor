@@ -1,0 +1,37 @@
+﻿@inject IJSRuntime JS
+
+<div id="@_elementId" class="mermaid-diagram">
+    <div class="text-secondary">
+        Rendering architecture diagram...
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public string? Diagram { get; set; }
+
+    private readonly string _elementId =
+        $"mermaid-{Guid.NewGuid():N}";
+
+    private string? _lastDiagram;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (string.IsNullOrWhiteSpace(Diagram))
+        {
+            return;
+        }
+
+        if (Diagram == _lastDiagram)
+        {
+            return;
+        }
+
+        _lastDiagram = Diagram;
+
+        await JS.InvokeVoidAsync(
+            "renderMermaid",
+            _elementId,
+            Diagram);
+    }
+}

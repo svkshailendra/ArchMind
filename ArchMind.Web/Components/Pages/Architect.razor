@@ -1,0 +1,199 @@
+﻿@page "/architect"
+@rendermode InteractiveServer
+
+@using ArchMind.Application.Architectures
+@using ArchMind.Application.Common.Exceptions
+@using ArchMind.Domain.Architectures
+@using ArchMind.Web.Models
+@inject ISolutionArchitect SolutionArchitect
+
+<PageTitle>ArchiMind Architecture Generator</PageTitle>
+
+<div class="architect-page">
+    <header class="mb-4">
+        <span class="badge text-bg-primary mb-2">
+            Local AI • Zero API Cost
+        </span>
+
+        <h1>ArchiMind</h1>
+
+        <p class="lead text-secondary">
+            Describe a system and generate an explainable solution
+            architecture using a locally running AI model.
+        </p>
+    </header>
+
+    <div class="row g-4">
+        <div class="col-12 col-xl-5">
+            <section class="card shadow-sm">
+                <div class="card-body">
+                    <h2 class="h4">System requirements</h2>
+
+                    <EditForm Model="_form"
+                              OnValidSubmit="GenerateArchitectureAsync">
+                        <DataAnnotationsValidator />
+                        <ValidationSummary class="text-danger mb-3" />
+
+                        <div class="mb-3">
+                            <label class="form-label"
+                                   for="businessProblem">
+                                Business problem
+                            </label>
+
+                            <InputTextArea id="businessProblem"
+                                           class="form-control"
+                                           rows="7"
+                                           @bind-Value="_form.BusinessProblem" />
+
+                            <ValidationMessage
+                                For="() => _form.BusinessProblem"
+                                class="text-danger" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label"
+                                   for="expectedUsers">
+                                Expected users or scale
+                            </label>
+
+                            <InputText id="expectedUsers"
+                                       class="form-control"
+                                       @bind-Value="_form.ExpectedUsers" />
+
+                            <ValidationMessage
+                                For="() => _form.ExpectedUsers"
+                                class="text-danger" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label"
+                                   for="constraints">
+                                Constraints
+                            </label>
+
+                            <InputTextArea id="constraints"
+                                           class="form-control"
+                                           rows="4"
+                                           @bind-Value="_form.Constraints" />
+
+                            <ValidationMessage
+                                For="() => _form.Constraints"
+                                class="text-danger" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label"
+                                   for="preferredTechnology">
+                                Preferred technology
+                            </label>
+
+                            <InputTextArea id="preferredTechnology"
+                                           class="form-control"
+                                           rows="3"
+                                           @bind-Value="_form.PreferredTechnology" />
+
+                            <ValidationMessage
+                                For="() => _form.PreferredTechnology"
+                                class="text-danger" />
+                        </div>
+
+                        <button class="btn btn-primary w-100"
+                                type="submit"
+                                disabled="@_isGenerating">
+                            @if (_isGenerating)
+                            {
+                                <span class="spinner-border spinner-border-sm me-2"
+                                      aria-hidden="true">
+                                </span>
+
+                                <span>Generating architecture...</span>
+                                <div class="progress mt-3">
+                                    <div class="progress-bar progress-bar-striped progress-bar-animated"
+                                         role="progressbar"
+                                         style="width: 100%">
+                                        Processing...
+                                    </div>
+                                </div>
+                            }
+                            else
+                            {
+                                <span>Generate architecture</span>
+                            }
+                        </button>
+                    </EditForm>
+                </div>
+            </section>
+        </div>
+
+        <div class="col-12 col-xl-7">
+            @if (!string.IsNullOrWhiteSpace(_errorMessage))
+            {
+                <div class="alert alert-danger" role="alert">
+                    <h2 class="h5">Generation failed</h2>
+                    <p class="mb-0">@_errorMessage</p>
+                </div>
+            }
+
+            @if (_proposal is null && !_isGenerating)
+            {
+                <section class="card shadow-sm empty-result">
+                    <div class="card-body text-center py-5">
+                        <h2 class="h4">Your architecture will appear here</h2>
+                        <p class="text-secondary mb-0">
+                            Complete the requirements and select
+                            Generate architecture.
+                        </p>
+                    </div>
+                </section>
+            }
+
+            @if (_proposal is not null)
+            {
+                <ArchitectureResult Proposal="_proposal" />
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    private readonly ArchitectureFormModel _form = new();
+
+    private ArchitectureProposal? _proposal;
+    private string? _errorMessage;
+    private bool _isGenerating;
+
+    private async Task GenerateArchitectureAsync()
+    {
+        if (_isGenerating)
+        {            
+            return;
+        }
+
+        _isGenerating = true;
+        _errorMessage = null;
+        _proposal = null;
+
+        try
+        {
+            _proposal = await SolutionArchitect.GenerateAsync(
+                _form.ToRequest());
+        }
+        catch (ArchitectureGenerationException exception)
+        {
+            _errorMessage = exception.Message;
+        }
+        catch (OperationCanceledException)
+        {
+            _errorMessage = "Architecture generation was cancelled.";
+        }
+        catch
+        {
+            _errorMessage =
+                "An unexpected error occurred. Review the application logs.";
+        }
+        finally
+        {
+            _isGenerating = false;
+        }
+    }
+}

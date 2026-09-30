@@ -1,0 +1,30 @@
+﻿<div class="card shadow-sm mb-4 @CssClass">
+    <div class="card-body">
+        <h2 class="h4">@Title</h2>
+
+        @if (Items.Count == 0)
+        {
+            <p class="text-secondary mb-0">None identified.</p>
+        }
+        else
+        {
+            <ul class="mb-0">
+                @foreach (var item in Items)
+                {
+                    <li class="mb-2">@item</li>
+                }
+            </ul>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public required string Title { get; set; }
+
+    [Parameter, EditorRequired]
+    public required IReadOnlyList<string> Items { get; set; }
+
+    [Parameter]
+    public string CssClass { get; set; } = string.Empty;
+}

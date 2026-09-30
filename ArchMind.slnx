@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="ArchMind.Application/ArchMind.Application.csproj" />
+  <Project Path="ArchMind.Domain/ArchMind.Domain.csproj" />
+  <Project Path="ArchMind.Infrastructure/ArchMind.Infrastructure.csproj" />
+  <Project Path="ArchMind.UnitTests/ArchMind.UnitTests.csproj" />
+  <Project Path="ArchMind.Web/ArchMind.Web.csproj" />
+</Solution>
