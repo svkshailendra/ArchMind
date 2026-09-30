@@ -14,12 +14,18 @@
     try {
         const id = "mermaid-" + Date.now();
 
-        const result = await mermaid.render(id, diagram);
+        const cleanDiagram = diagram.replace(/\\n/g, "\n");
+
+        console.log("Mermaid diagram being rendered:", cleanDiagram);
+
+        const result = await mermaid.render(id, cleanDiagram);
 
         element.innerHTML = result.svg;
     }
     catch (error) {
         console.error("Mermaid rendering failed:", error);
+        console.error("Invalid Mermaid diagram:", diagram);
+
 
         element.innerHTML = `
             <div class="alert alert-warning">

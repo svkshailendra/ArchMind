@@ -32,12 +32,20 @@ Follow these rules:
 8. Return only valid JSON.
 9. Do not wrap JSON inside Markdown code fences.
 10. Generate a valid Mermaid flowchart using graph TD.
-11. The Mermaid diagram must represent the components in the architecture.
-12. Show the major relationships and request/data flow between components.
-13. Use simple Mermaid node identifiers and labels.
-14. Do not use Markdown code fences.
-15. Return the Mermaid diagram as a JSON string with escaped newlines.
-16. Do not include unsupported or invalid Mermaid syntax.
+11. The Mermaid diagram must represent the components and relationships in the architecture.
+12. Every component must have a simple node ID such as A, B, C, D.
+13. Node IDs MUST contain only letters and numbers.
+14. NEVER put spaces in node IDs.
+15. NEVER use a component name as a node ID.
+16. Put the human-readable component name inside the node label.
+17. Always use this format for nodes: A["Component Name"]
+18. Relationships must use node IDs, for example: A --> B.
+19. Relationships with descriptions must use: A -->|"description"| B.
+20. Never write a node like "Component Name[Component Name]".
+21. Never put a node label directly where a node ID is expected.
+22. Do not use Markdown code fences.
+23. Return the Mermaid diagram as a JSON string with escaped newlines.
+24. Do not include unsupported or invalid Mermaid syntax.
 """;
 
         private static readonly JsonSerializerOptions JsonOptions = new()
@@ -268,7 +276,7 @@ Return one JSON object with exactly this structure:
 "assumptions": [
 "Assumption"
 ],
-"mermaidDiagram": "graph TD\nA[User] --> B[Application]"
+"mermaidDiagram": "graph TD\nA[\"User\"] --> B[\"Application\"]"
 }
  
 
@@ -292,15 +300,44 @@ ARCHITECTURE RULES:
 
 MERMAID RULES:
 
-- Generate the Mermaid diagram from the components and relationships.
-- Use "graph TD".
-- Every important component should appear in the diagram.
-- Every Mermaid relationship should correspond to a relationship in the "relationships" array.
+- Generate a valid Mermaid flowchart using "graph TD".
+- Every component must appear as a Mermaid node.
+- Every component must have a unique simple node ID.
+- Node IDs must contain ONLY letters and numbers.
+- Never use spaces in node IDs.
+- Never use the component name as the node ID.
+- Use node IDs such as A, B, C, D, E.
+- Put the full human-readable component name inside the node label.
+- Always use this node format:
+
+  A["User"]
+  B["Application"]
+  C["Note Storage Service"]
+
+- Relationships must reference node IDs only.
+
+  Correct:
+  A --> B
+  B --> C
+
+- Relationships with descriptions must use:
+
+  A -->|"sends notes"| B
+
+- Never write:
+
+  Note Storage Service[Note Storage Service]
+
+- Never write:
+
+  Note Storage Service --> Database
+
+- Never use spaces or special characters in node IDs.
+- Every Mermaid relationship must correspond to a relationship in the relationships array.
 - Do not invent relationships that are not present in the relationships array.
-- Use simple Mermaid node IDs such as A, B, C or App, DB, Cache.
-- Put human-readable component names inside Mermaid labels.
+- Use "graph TD" as the first line.
 - Do not use Markdown code fences.
-- Escape newline characters correctly for JSON.
+- Escape newline characters correctly for the JSON string.
 - Return valid Mermaid syntax.
 
 RESPONSE RULES:
