@@ -10,7 +10,7 @@ COPY ArchMind.Domain/ ArchMind.Domain/
 COPY ArchMind.Infrastructure/ ArchMind.Infrastructure/
 
 # Restore dependencies using your slnx solution file
-RUN dotnet restore ArchMind.slnx
+RUN dotnet restore ArchMind.Web/ArchMind.Web.csproj
 
 # Publish the Web project directly
 RUN dotnet publish ArchMind.Web/ArchMind.Web.csproj -c Release -o /app/publish
