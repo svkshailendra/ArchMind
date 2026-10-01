@@ -1,7 +1,220 @@
 ﻿@page "/"
 
-<PageTitle>Home</PageTitle>
+<PageTitle>ArchMind | AI Solution Architecture Assistant</PageTitle>
 
-<h1>Hello, world!</h1>
+<div class="home-page">
+    <section class="hero-section">
+        <div class="hero-content">
+            <div class="hero-badges">
+                <span>Cloud AI</span>
+                <span>Public Demo</span>
+                <span>Explainable Output</span>
+            </div>
 
-Welcome to your new app.
+            <h1>Design better systems with AI</h1>
+
+            <p class="hero-description">
+                ArchMind transforms business requirements into structured
+                solution architectures with technology recommendations,
+                component relationships, risks, security guidance,
+                scalability considerations, and visual diagrams.
+            </p>
+
+            <div class="hero-actions">
+                <a href="/architect">
+                    Start Designing
+                </a>
+
+                <a href="#how-it-works">
+                    See How It Works
+                </a>
+            </div>
+
+            <p class="provider-note">
+                Hosted on Render with cloud AI inference powered by Groq.
+            </p>
+        </div>
+
+        <div class="hero-preview">
+            <div class="preview-window">
+                <div class="preview-header">
+                    <span class="preview-dot red"></span>
+                    <span class="preview-dot yellow"></span>
+                    <span class="preview-dot green"></span>
+                    <span class="preview-title">Architecture Proposal</span>
+                </div>
+
+                <div class="preview-body">
+                    <div class="preview-summary">
+                        <span class="preview-label">ARCHITECTURE SUMMARY</span>
+                        <strong>Scalable internal note-taking platform</strong>
+                    </div>
+
+                    <div class="preview-flow">
+                        <div class="flow-node">Users</div>
+                        <div class="flow-arrow">↓</div>
+                        <div class="flow-node primary">Web Application</div>
+                        <div class="flow-arrow">↓</div>
+
+                        <div class="flow-grid">
+                            <div class="flow-node">Authentication</div>
+                            <div class="flow-node">Application API</div>
+                            <div class="flow-node">Database</div>
+                        </div>
+                    </div>
+
+                    <div class="preview-tags">
+                        <span>Security reviewed</span>
+                        <span>Risks identified</span>
+                        <span>Trade-offs explained</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="how-it-works" class="content-section">
+        <div class="section-heading">
+            <span class="section-eyebrow">HOW IT WORKS</span>
+            <h2>From requirements to architecture</h2>
+            <p>
+                Provide the context. ArchMind handles the architecture analysis.
+            </p>
+        </div>
+
+        <div class="steps-grid">
+            <article class="feature-card">
+                <div class="step-number">01</div>
+                <h3>Describe</h3>
+                <p>
+                    Enter the business problem, expected scale, constraints,
+                    and optional technology preferences.
+                </p>
+            </article>
+
+            <article class="feature-card">
+                <div class="step-number">02</div>
+                <h3>Analyze</h3>
+                <p>
+                    The assistant evaluates suitable components, technologies,
+                    security requirements, scalability, and trade-offs.
+                </p>
+            </article>
+
+            <article class="feature-card">
+                <div class="step-number">03</div>
+                <h3>Generate</h3>
+                <p>
+                    Receive a structured proposal with component relationships,
+                    risks, assumptions, and a rendered architecture diagram.
+                </p>
+            </article>
+        </div>
+    </section>
+
+    <section class="content-section capabilities-section">
+        <div class="section-heading">
+            <span class="section-eyebrow">CAPABILITIES</span>
+            <h2>More than a generic AI response</h2>
+        </div>
+
+        <div class="capabilities-grid">
+            <div class="capability-item">
+                <span class="capability-icon">◆</span>
+                <div>
+                    <h3>Technology Selection</h3>
+                    <p>Objective recommendations based on requirements.</p>
+                </div>
+            </div>
+
+            <div class="capability-item">
+                <span class="capability-icon">◇</span>
+                <div>
+                    <h3>Architecture Diagrams</h3>
+                    <p>Rendered visual relationships between components.</p>
+                </div>
+            </div>
+
+            <div class="capability-item">
+                <span class="capability-icon">✓</span>
+                <div>
+                    <h3>Security Analysis</h3>
+                    <p>Security considerations specific to the proposal.</p>
+                </div>
+            </div>
+
+            <div class="capability-item">
+                <span class="capability-icon">↗</span>
+                <div>
+                    <h3>Scalability Guidance</h3>
+                    <p>Practical recommendations for future growth.</p>
+                </div>
+            </div>
+
+            <div class="capability-item">
+                <span class="capability-icon">!</span>
+                <div>
+                    <h3>Risk Identification</h3>
+                    <p>Potential technical and operational risks.</p>
+                </div>
+            </div>
+
+            <div class="capability-item">
+                <span class="capability-icon">?</span>
+                <div>
+                    <h3>Explicit Assumptions</h3>
+                    <p>Missing context is surfaced instead of hidden.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="content-section technology-section">
+        <div class="technology-content">
+            <div>
+                <span class="section-eyebrow">ENGINEERING</span>
+                <h2>Built with modern .NET and cloud AI</h2>
+
+                <p>
+                    ArchMind uses clean application boundaries so that the
+                    AI provider can change without affecting the domain or
+                    presentation layers.
+                </p>
+
+                <div class="technology-tags">
+                    <span>.NET 10</span>
+                    <span>Blazor</span>
+                    <span>Agent Framework</span>
+                    <span>Groq</span>
+                    <span>Mermaid</span>
+                    <span>Render</span>
+                </div>
+            </div>
+
+            <div class="architecture-flow">
+                <div>Blazor Web App</div>
+                <span>↓</span>
+                <div>Application Layer</div>
+                <span>↓</span>
+                <div>Solution Architect Agent</div>
+                <span>↓</span>
+                <div>Groq Cloud Inference</div>
+                <span>↓</span>
+                <div>Validated Structured Output</div>
+            </div>
+        </div>
+    </section>
+
+    <section class="cta-section">
+        <span class="section-eyebrow">TRY ARCHMIND</span>
+        <h2>Ready to design your system?</h2>
+        <p>
+            Describe your requirements and generate an explainable
+            architecture proposal.
+        </p>
+
+    <a href="/architect">
+        Start Designing
+    </a>
+    </section>
+</div>
