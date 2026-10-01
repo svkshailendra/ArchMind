@@ -1,7 +1,4 @@
-﻿using ArchMind.Domain.Architectures;
-using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using ArchMind.Domain.Architectures; 
 
 namespace ArchMind.Application.Architectures
 {

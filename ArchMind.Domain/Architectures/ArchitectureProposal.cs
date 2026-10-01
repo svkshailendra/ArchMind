@@ -12,7 +12,7 @@ namespace ArchMind.Domain.Architectures
 
         public required IReadOnlyList<ArchitectureComponent> Components { get; init; }
 
-        public List<ArchitectureRelationship> Relationships { get; set; } = [];
+        public required IReadOnlyList<ArchitectureRelationship> Relationships { get; init; }
 
         public required IReadOnlyList<string> SecurityConsiderations { get; init; }
 

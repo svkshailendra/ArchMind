@@ -16,7 +16,7 @@ namespace ArchMind.Infrastructure.AI
     public sealed class AiSolutionArchitect : ISolutionArchitect
     {
         private const string AgentInstructions = """
-You are ArchiMind, a pragmatic senior solution architect.
+You are ArchMind, a pragmatic senior solution architect.
  
 Your responsibility is to create implementable architecture proposals.
  
@@ -57,7 +57,7 @@ Follow these rules:
         };
 
         private readonly OllamaOptions _ollamaOptions;
-        private readonly ILogger<AiSolutionArchitect> _logger; 
+        private readonly ILogger<AiSolutionArchitect> _logger;
         private readonly AIOptions _aiOptions;
         private readonly GroqOptions _groqOptions;
 
@@ -93,21 +93,7 @@ Follow these rules:
             timeoutSource.Token);
 
             try
-            {
-                //var chatClient = new OllamaApiClient(
-                //new Uri(_options.Endpoint),
-                //_options.Model);
-
-                //AIAgent agent = chatClient.AsAIAgent(
-                //instructions: AgentInstructions,
-                //name: "SolutionArchitectAgent");
-
-                //var prompt = BuildPrompt(request);
-
-                //_logger.LogInformation(
-                //"Generating architecture proposal using model {Model}",
-                //_options.Model);
-
+            { 
                 var agent = CreateAgent();
 
                 var prompt = BuildPrompt(request);
@@ -480,6 +466,13 @@ RESPONSE RULES:
                 throw new ArgumentException(
                 "The business problem cannot exceed 5,000 characters.",
                 nameof(request));
+            }
+
+            if (string.IsNullOrWhiteSpace(request.ExpectedUsers))
+            {
+                throw new ArgumentException(
+                    "Expected users or scale is required.",
+                    nameof(request));
             }
         }
     }
