@@ -22,7 +22,10 @@ namespace ArchMind.Domain.Architectures
 
         public required IReadOnlyList<string> Assumptions { get; init; }
 
-        public required string MermaidDiagram { get; init; } = string.Empty;
+        public string? MermaidDiagram { get; set; }  
+
+        public required List<ArchitectureKnowledgeSource> KnowledgeSources { get; init; } 
+
     }
 
     public sealed record ArchitectureComponent
