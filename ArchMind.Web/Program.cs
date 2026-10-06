@@ -1,6 +1,8 @@
 using ArchMind.Application.Architectures;
-using ArchMind.Web.Components;
+using ArchMind.Application.Architectures.Knowledge;
 using ArchMind.Infrastructure;
+using ArchMind.Infrastructure.Knowledge;
+using ArchMind.Web.Components;
 
 namespace ArchMind.Web
 {
@@ -14,6 +16,9 @@ namespace ArchMind.Web
             builder.Services.AddRazorComponents()
                 .AddInteractiveServerComponents();
             builder.Services.AddInfrastructure(builder.Configuration);
+            builder.Services.AddSingleton<
+                IArchitectureKnowledgeRetriever,
+                LocalArchitectureKnowledgeRetriever>();
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.

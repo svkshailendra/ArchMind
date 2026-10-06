@@ -1,4 +1,5 @@
 ﻿using ArchMind.Application.Architectures;
+using ArchMind.Application.Architectures.Knowledge;
 using ArchMind.Application.Common.Exceptions;
 using ArchMind.Domain.Architectures;
 using Microsoft.Agents.AI;
@@ -8,6 +9,8 @@ using Microsoft.Extensions.Options;
 using OllamaSharp;
 using OpenAI;
 using System.ClientModel;
+using System.Diagnostics;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -15,6 +18,9 @@ namespace ArchMind.Infrastructure.AI
 {
     public sealed class AiSolutionArchitect : ISolutionArchitect
     {
+        private readonly IArchitectureKnowledgeRetriever _knowledgeRetriever;
+
+
         private const string AgentInstructions = """
 You are ArchMind, a pragmatic senior solution architect.
  
@@ -31,21 +37,6 @@ Follow these rules:
 7. Do not invent requirements.
 8. Return only valid JSON.
 9. Do not wrap JSON inside Markdown code fences.
-10. Generate a valid Mermaid flowchart using graph TD.
-11. The Mermaid diagram must represent the components and relationships in the architecture.
-12. Every component must have a simple node ID such as A, B, C, D.
-13. Node IDs MUST contain only letters and numbers.
-14. NEVER put spaces in node IDs.
-15. NEVER use a component name as a node ID.
-16. Put the human-readable component name inside the node label.
-17. Always use this format for nodes: A["Component Name"]
-18. Relationships must use node IDs, for example: A --> B.
-19. Relationships with descriptions must use: A -->|"description"| B.
-20. Never write a node like "Component Name[Component Name]".
-21. Never put a node label directly where a node ID is expected.
-22. Do not use Markdown code fences.
-23. Return the Mermaid diagram as a JSON string with escaped newlines.
-24. Do not include unsupported or invalid Mermaid syntax.
 """;
 
         private static readonly JsonSerializerOptions JsonOptions = new()
@@ -66,11 +57,13 @@ Follow these rules:
         IOptions<AIOptions> aiOptions,
             IOptions<OllamaOptions> ollamaOptions,
             IOptions<GroqOptions> groqOptions,
+            IArchitectureKnowledgeRetriever knowledgeRetriever,
             ILogger<AiSolutionArchitect> logger)
         {
             _aiOptions = aiOptions.Value;
             _ollamaOptions = ollamaOptions.Value;
             _groqOptions = groqOptions.Value;
+            _knowledgeRetriever = knowledgeRetriever;
             _logger = logger;
         }
 
@@ -93,22 +86,53 @@ Follow these rules:
             timeoutSource.Token);
 
             try
-            { 
+            {
+                var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+                _logger.LogInformation(
+    "Architecture generation started. Provider={Provider}",
+    _aiOptions.Provider);
+
+                var knowledge = await _knowledgeRetriever.RetrieveAsync(request, linkedSource.Token);
+
+                _logger.LogInformation(
+    "Knowledge retrieval completed in {ElapsedSeconds:F2} seconds. Sources={Count}",
+    stopwatch.Elapsed.TotalSeconds,
+    knowledge.Count);
+                _logger.LogInformation("Retrieved {KnowledgeCount} architecture knowledge sources", knowledge.Count);
+
                 var agent = CreateAgent();
 
-                var prompt = BuildPrompt(request);
+                var prompt = BuildPrompt(request, knowledge);
 
                 _logger.LogInformation(
                     "Generating architecture proposal using provider {Provider}",
                     _aiOptions.Provider);
 
+                _logger.LogInformation(
+    "Starting AI generation using {Provider} at {ElapsedSeconds:F2} seconds",
+    _aiOptions.Provider,
+    stopwatch.Elapsed.TotalSeconds);
+
                 var response = await agent.RunAsync(
                 prompt,
                 cancellationToken: linkedSource.Token);
 
+                _logger.LogInformation(
+    "AI generation using {Provider} completed at {ElapsedSeconds:F2} seconds",
+    _aiOptions.Provider,
+    stopwatch.Elapsed.TotalSeconds);
+
                 var responseText = response.ToString();
 
-                return DeserializeAndValidate(responseText);
+                var proposal = DeserializeAndValidate(responseText, knowledge);
+
+                _logger.LogInformation(
+                    "Architecture generation completed in {ElapsedSeconds:F2} seconds",
+                    stopwatch.Elapsed.TotalSeconds);
+
+                return proposal;
+
+                //return DeserializeAndValidate(responseText, knowledge);
             }
             catch (OperationCanceledException)
             when (timeoutSource.IsCancellationRequested &&
@@ -118,8 +142,16 @@ Follow these rules:
                 $"Architecture generation exceeded the " +
                 $"{timeoutSeconds}-second timeout.");
             }
-            catch (OperationCanceledException)
+            catch (OperationCanceledException exception)
             {
+                _logger.LogError(
+                    exception,
+                    "Architecture generation was cancelled. " +
+                    "TimeoutSourceCancelled={TimeoutSourceCancelled}, " +
+                    "CallerCancelled={CallerCancelled}",
+                    timeoutSource.IsCancellationRequested,
+                    cancellationToken.IsCancellationRequested);
+
                 throw;
             }
             catch (ArchitectureGenerationException)
@@ -163,9 +195,16 @@ Follow these rules:
 
         private AIAgent CreateOllamaAgent()
         {
-            var chatClient = new OllamaApiClient(
-                new Uri(_ollamaOptions.Endpoint),
-                _ollamaOptions.Model);
+            var httpClient = new HttpClient
+            {
+                BaseAddress = new Uri(_ollamaOptions.Endpoint),
+                Timeout = Timeout.InfiniteTimeSpan
+            };
+
+            var chatClient = new OllamaApiClient(httpClient)
+            {
+                SelectedModel = _ollamaOptions.Model
+            };
 
             return chatClient.AsAIAgent(
                 instructions: AgentInstructions,
@@ -211,8 +250,10 @@ Follow these rules:
             return _ollamaOptions.TimeoutSeconds;
         }
 
-        private static string BuildPrompt(ArchitectureRequest request)
+        private static string BuildPrompt(ArchitectureRequest request, IReadOnlyList<KnowledgeChunk> knowledge)
         {
+            var knowledgeContext = BuildKnowledgeContext(knowledge);
+
             return $$""""
 Create a solution architecture for the following requirements.
  
@@ -227,6 +268,8 @@ CONSTRAINTS:
  
 PREFERRED TECHNOLOGY:
 {{request.PreferredTechnology}}
+
+{{knowledgeContext}}
  
 Return one JSON object with exactly this structure:
  
@@ -262,7 +305,14 @@ Return one JSON object with exactly this structure:
 "assumptions": [
 "Assumption"
 ],
-"mermaidDiagram": "graph TD\nA[\"User\"] --> B[\"Application\"]"
+"knowledgeSources": [
+  {
+    "id": "RETRIEVED_SOURCE_ID",
+    "title": "Modular Monolith",
+    "category": "Architecture Pattern",
+    "reason": "Why this source was relevant"
+  }
+]
 }
  
 
@@ -283,48 +333,32 @@ ARCHITECTURE RULES:
 - A cache is normally accessed by the application, not placed after the database in a linear chain.
 - A database should only be connected to components that actually access it.
 - Keep the architecture simple and realistic.
+- Every relationship "from" and "to" value MUST exactly match a component
+  name in the components array.
+- Before returning JSON, verify that every relationship endpoint exists
+  in components[].name.
+- If an external service participates in the architecture, such as Stripe,
+  PayPal, Auth0, GitHub, or a cloud service, include it as a component
+  before referencing it in a relationship.
+- Never reference a technology, vendor, product, database, service, or
+  external system in a relationship unless it exists in components[].name.
+- The components and relationships arrays MUST be internally consistent.
 
-MERMAID RULES:
+KNOWLEDGE GROUNDING RULES:
 
-- Generate a valid Mermaid flowchart using "graph TD".
-- Every component must appear as a Mermaid node.
-- Every component must have a unique simple node ID.
-- Node IDs must contain ONLY letters and numbers.
-- Never use spaces in node IDs.
-- Never use the component name as the node ID.
-- Use node IDs such as A, B, C, D, E.
-- Put the full human-readable component name inside the node label.
-- Always use this node format:
-
-  A["User"]
-  B["Application"]
-  C["Note Storage Service"]
-
-- Relationships must reference node IDs only.
-
-  Correct:
-  A --> B
-  B --> C
-
-- Relationships with descriptions must use:
-
-  A -->|"sends notes"| B
-
-- Never write:
-
-  Note Storage Service[Note Storage Service]
-
-- Never write:
-
-  Note Storage Service --> Database
-
-- Never use spaces or special characters in node IDs.
-- Every Mermaid relationship must correspond to a relationship in the relationships array.
-- Do not invent relationships that are not present in the relationships array.
-- Use "graph TD" as the first line.
-- Do not use Markdown code fences.
-- Escape newline characters correctly for the JSON string.
-- Return valid Mermaid syntax.
+- Use retrieved knowledge when it is relevant to the requirements.
+- Treat retrieved knowledge as internal architectural reference material.
+- Prefer relevant retrieved guidance over generic recommendations.
+- Do not claim that a recommendation came from the knowledge base unless
+  the corresponding source was retrieved.
+- Never invent knowledge source IDs.
+- Only cite sources included in RETRIEVED ARCHITECTURE KNOWLEDGE.
+- If the knowledge base does not contain relevant guidance, use general
+  architectural reasoning without inventing citations.
+- Explain why each cited source is relevant.
+- The knowledgeSources example values are placeholders.
+- Never return placeholder IDs.
+- Only use source IDs that appear in RETRIEVED ARCHITECTURE KNOWLEDGE.
 
 RESPONSE RULES:
 
@@ -338,14 +372,67 @@ RESPONSE RULES:
 """";
         }
 
+        private static string BuildKnowledgeContext(
+    IReadOnlyList<KnowledgeChunk> knowledge)
+        {
+            if (knowledge.Count == 0)
+            {
+                return """
+RETRIEVED ARCHITECTURE KNOWLEDGE:
+
+No relevant internal knowledge was retrieved.
+Do not invent knowledge-base citations.
+""";
+            }
+
+            var builder = new StringBuilder();
+
+            builder.AppendLine(
+                "RETRIEVED ARCHITECTURE KNOWLEDGE:");
+
+            builder.AppendLine();
+
+            builder.AppendLine(
+                "Use the following internal architecture knowledge " +
+                "as reference material.");
+
+            builder.AppendLine();
+
+            foreach (var item in knowledge)
+            {
+                builder.AppendLine(
+                    $"SOURCE ID: {item.DocumentId}");
+
+                builder.AppendLine(
+                    $"TITLE: {item.Title}");
+
+                builder.AppendLine(
+                    $"CATEGORY: {item.Category}");
+
+                builder.AppendLine(
+                    $"SOURCE: {item.Source}");
+
+                builder.AppendLine();
+
+                builder.AppendLine(item.Content);
+
+                builder.AppendLine();
+                builder.AppendLine("---");
+                builder.AppendLine();
+            }
+
+            return builder.ToString();
+        }
         private static ArchitectureProposal DeserializeAndValidate(
-        string? responseText)
+        string? responseText, IReadOnlyList<KnowledgeChunk> knowledge)
         {
             if (string.IsNullOrWhiteSpace(responseText))
             {
                 throw new ArchitectureGenerationException(
                 "The AI model returned an empty response.");
             }
+
+
 
             var normalizedJson = ExtractJson(responseText);
 
@@ -388,9 +475,17 @@ RESPONSE RULES:
                     "The architecture response does not contain relationships.");
             }
 
+            foreach (var component in proposal.Components)
+            {
+                if (string.IsNullOrWhiteSpace(component.Name))
+                {
+                    throw new ArchitectureGenerationException(
+                        "Architecture components must contain a name.");
+                }
+            }
+
             var componentNames = proposal.Components
     .Select(x => x.Name)
-    .Where(x => !string.IsNullOrWhiteSpace(x))
     .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
             foreach (var relationship in proposal.Relationships)
@@ -417,11 +512,33 @@ RESPONSE RULES:
                 }
             }
 
-            if (string.IsNullOrWhiteSpace(proposal.MermaidDiagram))
+            if (proposal.KnowledgeSources is null)
             {
                 throw new ArchitectureGenerationException(
-                "The architecture response does not contain a Mermaid diagram.");
+                    "The architecture response does not contain knowledge sources.");
             }
+
+            var validKnowledgeIds = knowledge
+                                    .Select(x => x.DocumentId)
+                                    .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var source in proposal.KnowledgeSources)
+            {
+                if (string.IsNullOrWhiteSpace(source.Id))
+                {
+                    throw new ArchitectureGenerationException(
+                        "Knowledge source is missing an ID.");
+                }
+
+                if (!validKnowledgeIds.Contains(source.Id))
+                {
+                    throw new ArchitectureGenerationException(
+                        $"Architecture response references an unknown knowledge source: " +
+                        $"'{source.Id}'.");
+                }
+            }
+
+            proposal.MermaidDiagram = BuildMermaidDiagram(proposal);
 
             return proposal;
         }
@@ -475,5 +592,100 @@ RESPONSE RULES:
                     nameof(request));
             }
         }
+
+        private static string BuildMermaidDiagram(ArchitectureProposal proposal)
+        {
+            var builder = new StringBuilder();
+
+            builder.AppendLine("graph TD");
+
+            var componentIds = new Dictionary<string, string>(
+                StringComparer.OrdinalIgnoreCase);
+
+            for (var i = 0; i < proposal.Components.Count; i++)
+            {
+                var component = proposal.Components[i];
+
+                var id = GetMermaidNodeId(i);
+
+                componentIds[component.Name] = id;
+
+                var label = EscapeMermaidLabel(component.Name);
+
+                builder.AppendLine(
+                    $"{id}[\"{label}\"]");
+            }
+
+            foreach (var relationship in proposal.Relationships)
+            {
+                if (!componentIds.TryGetValue(
+                        relationship.From,
+                        out var fromId))
+                {
+                    continue;
+                }
+
+                if (!componentIds.TryGetValue(
+                        relationship.To,
+                        out var toId))
+                {
+                    continue;
+                }
+
+                var description =
+                    EscapeMermaidLabel(
+                        relationship.Description);
+
+                if (string.IsNullOrWhiteSpace(description))
+                {
+                    builder.AppendLine(
+                        $"{fromId} --> {toId}");
+                }
+                else
+                {
+                    builder.AppendLine(
+                        $"{fromId} -->|\"{description}\"| {toId}");
+                }
+            }
+
+            return builder.ToString().Trim();
+        }
+
+        private static string GetMermaidNodeId(int index)
+        {
+            var number = index;
+
+            var result = string.Empty;
+
+            do
+            {
+                result =
+                    (char)('A' + number % 26) +
+                    result;
+
+                number =
+                    number / 26 - 1;
+
+            } while (number >= 0);
+
+            return result;
+        }
+
+        private static string EscapeMermaidLabel(string? value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return string.Empty;
+            }
+
+            return value
+                .Replace("\"", "'", StringComparison.Ordinal)
+                .Replace("\r", " ", StringComparison.Ordinal)
+                .Replace("\n", " ", StringComparison.Ordinal)
+                .Trim();
+        }
+
+
+
     }
 }

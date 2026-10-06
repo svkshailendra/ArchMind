@@ -45,9 +45,8 @@
                                            rows="7"
                                            @bind-Value="_form.BusinessProblem" />
 
-                            <ValidationMessage
-                                For="() => _form.BusinessProblem"
-                                class="text-danger" />
+                            <ValidationMessage For="() => _form.BusinessProblem"
+                                               class="text-danger" />
                         </div>
 
                         <div class="mb-3">
@@ -60,9 +59,8 @@
                                        class="form-control"
                                        @bind-Value="_form.ExpectedUsers" />
 
-                            <ValidationMessage
-                                For="() => _form.ExpectedUsers"
-                                class="text-danger" />
+                            <ValidationMessage For="() => _form.ExpectedUsers"
+                                               class="text-danger" />
                         </div>
 
                         <div class="mb-3">
@@ -76,9 +74,8 @@
                                            rows="4"
                                            @bind-Value="_form.Constraints" />
 
-                            <ValidationMessage
-                                For="() => _form.Constraints"
-                                class="text-danger" />
+                            <ValidationMessage For="() => _form.Constraints"
+                                               class="text-danger" />
                         </div>
 
                         <div class="mb-3">
@@ -92,9 +89,8 @@
                                            rows="3"
                                            @bind-Value="_form.PreferredTechnology" />
 
-                            <ValidationMessage
-                                For="() => _form.PreferredTechnology"
-                                class="text-danger" />
+                            <ValidationMessage For="() => _form.PreferredTechnology"
+                                               class="text-danger" />
                         </div>
 
                         <button class="btn btn-primary w-100"
@@ -165,7 +161,7 @@
     private async Task GenerateArchitectureAsync()
     {
         if (_isGenerating)
-        {            
+        {
             return;
         }
 
@@ -182,9 +178,10 @@
         {
             _errorMessage = exception.Message;
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException exception)
         {
-            _errorMessage = "Architecture generation was cancelled.";
+            _errorMessage =
+                $"Architecture generation was cancelled: {exception.Message}";
         }
         catch
         {

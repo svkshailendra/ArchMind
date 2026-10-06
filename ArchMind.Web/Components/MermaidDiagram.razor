@@ -13,7 +13,7 @@
     private readonly string _elementId =
         $"mermaid-{Guid.NewGuid():N}";
 
-    private string? _lastDiagram;
+    private string? _lastRenderedDiagram;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -22,16 +22,28 @@
             return;
         }
 
-        if (Diagram == _lastDiagram)
+        if (string.Equals(
+                Diagram,
+                _lastRenderedDiagram,
+                StringComparison.Ordinal))
         {
             return;
         }
 
-        _lastDiagram = Diagram;
+        try
+        {
+            await JS.InvokeVoidAsync(
+                "renderMermaid",
+                _elementId,
+                Diagram);
 
-        await JS.InvokeVoidAsync(
-            "renderMermaid",
-            _elementId,
-            Diagram);
+            // Only mark it as rendered after JS succeeds.
+            _lastRenderedDiagram = Diagram;
+        }
+        catch (JSException exception)
+        {
+            Console.Error.WriteLine(
+                $"Mermaid rendering failed: {exception.Message}");
+        }
     }
 }
