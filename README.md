@@ -6,6 +6,8 @@ ArchiMind uses a provider-based AI architecture that supports local Ollama infer
 
 The application also includes a lightweight keyword-based retrieval-augmented generation (RAG) pipeline that retrieves relevant architecture knowledge from a curated local knowledge base and provides the retrieved context to the AI agent.
 
+[Live Site](https://archmind-2bc5.onrender.com/)
+
 ## Current status
 
 **Functional MVP**
@@ -220,6 +222,11 @@ any
 
 When `Preferred technology` is `any`, the agent is expected to select an appropriate stack based on the supplied requirements and explain the rationale. It does not automatically prefer .NET.
 
+## 📸 Screenshots
+![Home Page](ArchMind.Web/wwwroot/images/Home.png)
+
+![Architect](ArchMind.Web/wwwroot/images/Architect.png)
+
 ## Deployment
 
 ArchiMind can be deployed using a cloud-hosted AI provider.
@@ -267,17 +274,14 @@ Provider credentials should be configured using the deployment platform's enviro
 - [x] Security, scalability, risks, and assumptions
 - [x] Rendered Mermaid diagram
 
-
-
 ### Milestone 2: Repository hardening
 
-- [ ] Add unit tests for request and response validation
-- [ ] Add integration tests with a replaceable fake AI implementation
-- [ ] Add GitHub Actions build and test workflow
-- [ ] Add Docker support for repeatable local setup
-- [ ] Add screenshots and an animated demo
-- [ ] Add sample architecture requests
-- [ ] Add structured logging and health checks
+- [x] Add unit tests for request and response validation
+- [x] Add integration tests with a replaceable fake AI implementation 
+- [x] Add Docker support for repeatable local setup
+- [x] Add screenshots
+- [x] Add sample architecture requests
+- [x] Add structured logging and health checks
 
 ### Milestone 3: Grounded architecture knowledge
 
