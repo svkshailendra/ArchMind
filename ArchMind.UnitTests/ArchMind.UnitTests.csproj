@@ -17,6 +17,7 @@
   <ItemGroup>
     <ProjectReference Include="..\ArchMind.Application\ArchMind.Application.csproj" />
     <ProjectReference Include="..\ArchMind.Domain\ArchMind.Domain.csproj" />
+    <ProjectReference Include="..\ArchMind.Web\ArchMind.Web.csproj" />
   </ItemGroup>
 
   <ItemGroup>
