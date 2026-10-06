@@ -1,8 +1,8 @@
-# ArchiMind
+# ArchMind
 
-ArchiMind is a local-first AI solution architecture assistant built with .NET and Blazor. It converts business requirements, expected scale, constraints, and optional technology preferences into a structured and explainable architecture proposal.
+ArchMind is a local-first AI solution architecture assistant built with .NET and Blazor. It converts business requirements, expected scale, constraints, and optional technology preferences into a structured and explainable architecture proposal.
 
-ArchiMind uses a provider-based AI architecture that supports local Ollama inference for development and cloud-hosted AI providers such as Groq for deployment.
+ArchMind uses a provider-based AI architecture that supports local Ollama inference for development and cloud-hosted AI providers such as Groq for deployment.
 
 The application also includes a lightweight keyword-based retrieval-augmented generation (RAG) pipeline that retrieves relevant architecture knowledge from a curated local knowledge base and provides the retrieved context to the AI agent.
 
@@ -12,7 +12,7 @@ The application also includes a lightweight keyword-based retrieval-augmented ge
 
 **Functional MVP**
 
-ArchiMind currently supports:
+ArchMind currently supports:
 
 - Business requirements and constraint capture
 - Neutral technology selection when the preference is `any`
@@ -36,14 +36,14 @@ ArchiMind currently supports:
 Add the current screenshots to `docs/images` using these names:
 
 ```text
-docs/images/archimind-overview.png
-docs/images/archimind-diagram.png
+docs/images/archmind-overview.png
+docs/images/archmind-diagram.png
 ```
 
 Then uncomment the image references below:
 
-<!-- ![ArchiMind overview](docs/images/archimind-overview.png) -->
-<!-- ![Generated architecture diagram](docs/images/archimind-diagram.png) -->
+<!-- ![ArchMind overview](docs/images/archmind-overview.png) -->
+<!-- ![Generated architecture diagram](docs/images/archmind-diagram.png) -->
 
 ## How it works
 
@@ -94,27 +94,27 @@ The application uses one focused agent. Deterministic application behavior remai
 ## Solution structure
 
 ```text
-ArchiMind/
+ArchMind/
 ├── src/
-│   ├── ArchiMind.Web/
-│   ├── ArchiMind.Application/
-│   ├── ArchiMind.Domain/
-│   └── ArchiMind.Infrastructure/
+│   ├── ArchMind.Web/
+│   ├── ArchMind.Application/
+│   ├── ArchMind.Domain/
+│   └── ArchMind.Infrastructure/
 ├── tests/
-│   └── ArchiMind.UnitTests/
+│   └── ArchMind.UnitTests/
 ├── Knowledge/
 ├── docs/
-└── ArchiMind.sln
+└── ArchMind.sln
 ```
 - `Knowledge`: Curated architecture and security knowledge documents used by the retrieval pipeline
 
 ### Project responsibilities
 
-- `ArchiMind.Web`: Blazor UI, form models, presentation, and dependency composition
-- `ArchiMind.Application`: Use-case contracts and application exceptions
-- `ArchiMind.Domain`: Architecture request, proposal, component, and relationship models
-- `ArchiMind.Infrastructure`: Ollama and Groq AI integrations, knowledge retrieval, and infrastructure services
-- `ArchiMind.UnitTests`: Unit tests for validation and deterministic application logic
+- `ArchMind.Web`: Blazor UI, form models, presentation, and dependency composition
+- `ArchMind.Application`: Use-case contracts and application exceptions
+- `ArchMind.Domain`: Architecture request, proposal, component, and relationship models
+- `ArchMind.Infrastructure`: Ollama and Groq AI integrations, knowledge retrieval, and infrastructure services
+- `ArchMind.UnitTests`: Unit tests for validation and deterministic application logic
 
 ## Prerequisites
 
@@ -133,7 +133,7 @@ git --version
 ```
 ### AI providers
 
-ArchiMind supports different AI providers through configuration.
+ArchMind supports different AI providers through configuration.
 
 For local development:
 
@@ -159,7 +159,7 @@ For cloud deployment :
 
 ```bash
 git clone <your-repository-url>
-cd ArchiMind
+cd ArchMind
 ```
 
 ### 2. Download the model
@@ -176,7 +176,7 @@ ollama serve
 
 ### 4. Configure the application
 
-Update `src/ArchiMind.Web/appsettings.json` if required:
+Update `src/ArchMind.Web/appsettings.json` if required:
 
 ```json
 {
@@ -199,7 +199,7 @@ dotnet test
 ### 6. Run the web application
 
 ```bash
-dotnet watch --project src/ArchiMind.Web
+dotnet watch --project src/ArchMind.Web
 ```
 
 Open the URL shown in the terminal and navigate to `/architect`.
@@ -229,7 +229,7 @@ When `Preferred technology` is `any`, the agent is expected to select an appropr
 
 ## Deployment
 
-ArchiMind can be deployed using a cloud-hosted AI provider.
+ArchMind can be deployed using a cloud-hosted AI provider.
 
 The production deployment uses Groq for AI inference, while local development can use Ollama without requiring a paid AI API.
 
