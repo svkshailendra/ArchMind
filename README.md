@@ -2,7 +2,9 @@
 
 ArchiMind is a local-first AI solution architecture assistant built with .NET and Blazor. It converts business requirements, expected scale, constraints, and optional technology preferences into a structured and explainable architecture proposal.
 
-The application uses a single AI agent backed by Ollama, so the core experience can run locally without paid AI APIs.
+ArchiMind uses a provider-based AI architecture that supports local Ollama inference for development and cloud-hosted AI providers such as Groq for deployment.
+
+The application also includes a lightweight keyword-based retrieval-augmented generation (RAG) pipeline that retrieves relevant architecture knowledge from a curated local knowledge base and provides the retrieved context to the AI agent.
 
 ## Current status
 
@@ -12,14 +14,20 @@ ArchiMind currently supports:
 
 - Business requirements and constraint capture
 - Neutral technology selection when the preference is `any`
+- Provider-based AI configuration
+- Local AI inference with Ollama
+- Cloud AI inference through Groq
 - Structured architecture summaries
 - Component responsibilities, technologies, and rationale
 - Explicit component relationships
 - Security and scalability considerations
 - Risks and assumptions
 - Mermaid-based architecture diagram generation and rendering
+- Curated architecture knowledge base
+- Keyword-based knowledge retrieval
+- Knowledge-grounded architecture recommendations
+- Knowledge source attribution in generated proposals
 - Input validation, timeout handling, and controlled AI failure handling
-- Local AI inference with no API key
 
 ## Screenshots
 
@@ -46,17 +54,24 @@ Blazor Web App
        v
 ISolutionArchitect
        |
-       v
-SolutionArchitectAgent
-       |
-       v
-Local Ollama model
-       |
-       v
-Validated ArchitectureProposal
-       |
-       v
-Structured UI and Mermaid diagram
+       +--------------------+
+       |                    |
+       v                    v
+Knowledge Retriever      AI Agent
+       |                    |
+       v                Ollama / Groq
+Local Markdown KB           |
+       |                    |
+       +--------->----------+
+                  |
+                  v
+       Validated ArchitectureProposal
+                  |
+          +-------+-------+
+          |               |
+          v               v
+     Structured UI    Mermaid diagram
+
 ```
 
 The application uses one focused agent. Deterministic application behavior remains in standard C# services, while the language model handles architecture reasoning and proposal generation.
@@ -69,6 +84,8 @@ The application uses one focused agent. Deterministic application behavior remai
 - Microsoft Agent Framework
 - Microsoft.Extensions.AI
 - Ollama
+- Groq
+- Curated Markdown-based architecture knowledge base
 - Mermaid
 - xUnit
 
@@ -83,27 +100,27 @@ ArchiMind/
 │   └── ArchiMind.Infrastructure/
 ├── tests/
 │   └── ArchiMind.UnitTests/
-├── knowledge/
+├── Knowledge/
 ├── docs/
 └── ArchiMind.sln
 ```
+- `Knowledge`: Curated architecture and security knowledge documents used by the retrieval pipeline
 
 ### Project responsibilities
 
 - `ArchiMind.Web`: Blazor UI, form models, presentation, and dependency composition
 - `ArchiMind.Application`: Use-case contracts and application exceptions
 - `ArchiMind.Domain`: Architecture request, proposal, component, and relationship models
-- `ArchiMind.Infrastructure`: Agent Framework and Ollama integration
+- `ArchiMind.Infrastructure`: Ollama and Groq AI integrations, knowledge retrieval, and infrastructure services
 - `ArchiMind.UnitTests`: Unit tests for validation and deterministic application logic
 
 ## Prerequisites
 
-Install:
+For local development with Ollama, install:
 
 - .NET 10 SDK
 - Ollama
 - Git
-- A supported Ollama model such as `llama3.2`
 
 Verify the installations:
 
@@ -112,7 +129,28 @@ dotnet --version
 ollama --version
 git --version
 ```
+### AI providers
 
+ArchiMind supports different AI providers through configuration.
+
+For local development:
+
+```json
+{
+  "AI": {
+    "Provider": "Ollama"
+  }
+}
+```
+
+For cloud deployment :
+```json
+{
+  "AI": {
+    "Provider": "Groq"
+  }
+}
+```
 ## Run locally
 
 ### 1. Clone the repository
@@ -182,6 +220,15 @@ any
 
 When `Preferred technology` is `any`, the agent is expected to select an appropriate stack based on the supplied requirements and explain the rationale. It does not automatically prefer .NET.
 
+## Deployment
+
+ArchiMind can be deployed using a cloud-hosted AI provider.
+
+The production deployment uses Groq for AI inference, while local development can use Ollama without requiring a paid AI API.
+
+Provider credentials should be configured using the deployment platform's environment variables or secret management facilities.
+
+
 ## Design principles
 
 - Start with one agent and scale only when justified
@@ -192,15 +239,19 @@ When `Preferred technology` is `any`, the agent is expected to select an appropr
 - Make assumptions, risks, and trade-offs visible
 - Avoid premature multi-agent orchestration
 - Keep the local development path free of paid services
+- Ground architectural recommendations in retrieved knowledge when relevant
+- Keep knowledge retrieval deterministic and separate from AI reasoning
+- Validate AI-reported knowledge sources against the retrieved source set
 
 ## Known limitations
 
-- Architecture quality depends on the selected local model
+- Architecture quality depends on the selected model
 - Generated recommendations still require human review
+- Knowledge retrieval currently uses keyword-based matching rather than semantic/vector search
+- Retrieval quality depends on lexical overlap between the request and knowledge documents
 - Clarification questions are not implemented yet
-- Architecture knowledge is currently model-based and is not grounded through RAG
 - Conversation history and saved proposals are not implemented
-- Public cloud deployment requires a reachable model provider or a separately hosted model runtime
+- The knowledge base is currently maintained as curated Markdown documents
 
 ## Roadmap
 
@@ -208,11 +259,15 @@ When `Preferred technology` is `any`, the agent is expected to select an appropr
 
 - [x] Clean .NET solution structure
 - [x] Blazor requirements form
-- [x] Single local AI agent
+- [x] Single AI agent
+- [x] Local Ollama provider
+- [x] Cloud Groq provider
 - [x] Structured architecture proposal
 - [x] Architecture relationships
 - [x] Security, scalability, risks, and assumptions
 - [x] Rendered Mermaid diagram
+
+
 
 ### Milestone 2: Repository hardening
 
@@ -226,27 +281,16 @@ When `Preferred technology` is `any`, the agent is expected to select an appropr
 
 ### Milestone 3: Grounded architecture knowledge
 
-- [ ] Add a curated local architecture knowledge base
-- [ ] Add document chunking and embeddings
-- [ ] Add local semantic retrieval
-- [ ] Include sources used for recommendations
-- [ ] Add architecture-pattern and security-checklist grounding
+- [x] Add a curated architecture knowledge base
+- [x] Add keyword-based document retrieval
+- [x] Provide retrieved knowledge to the AI agent
+- [x] Include sources used for recommendations
+- [x] Add architecture-pattern and security-checklist grounding
+- [ ] Add document chunking
+- [ ] Add embeddings
+- [ ] Add semantic/vector retrieval
+- [ ] Evaluate hybrid keyword + semantic retrieval
 
-### Milestone 4: Product capabilities
-
-- [ ] Save and reopen proposals
-- [ ] Export proposals to Markdown or PDF
-- [ ] Compare alternative architectures
-- [ ] Add clarification questions
-- [ ] Add architecture evaluation and quality scoring
-
-### Milestone 5: Recruiter demo
-
-- [ ] Add a safe public demo mode
-- [ ] Deploy the web application
-- [ ] Configure a deployment-compatible model provider
-- [ ] Add CI/CD
-- [ ] Add an architecture document and portfolio case study
 
 ## Testing strategy
 
@@ -260,12 +304,11 @@ Test without Ollama:
 - Response validation
 - JSON extraction and deserialization
 - Constraint checks
-- Duplicate component or relationship detection
 - Empty and malformed model responses
 
 ### Integration tests
 
-Run separately when Ollama is available:
+Run separately when an AI provider is available:
 
 - Agent connectivity
 - Structured response generation
@@ -273,6 +316,7 @@ Run separately when Ollama is available:
 - End-to-end request-to-proposal flow
 
 Model-dependent tests should verify structure and invariants rather than exact wording.
+Provider-specific integration tests can be run against Ollama locally or a configured cloud provider.
 
 ## Security notes
 
