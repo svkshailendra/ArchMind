@@ -99,23 +99,22 @@
                             @if (_isGenerating)
                             {
                                 <span class="spinner-border spinner-border-sm me-2"
-                                      aria-hidden="true">
-                                </span>
+                                      aria-hidden="true"></span>
 
                                 <span>Generating architecture...</span>
-                                <div class="progress mt-3">
-                                    <div class="progress-bar progress-bar-striped progress-bar-animated"
-                                         role="progressbar"
-                                         style="width: 100%">
-                                        Processing...
-                                    </div>
-                                </div>
                             }
                             else
                             {
                                 <span>Generate architecture</span>
                             }
                         </button>
+
+                        @if (_isGenerating)
+                        {
+                            <div class="text-center text-secondary small mt-2">
+                                Analyzing requirements and designing your architecture...
+                            </div>
+                        }
                     </EditForm>
                 </div>
             </section>
@@ -178,11 +177,11 @@
         {
             _errorMessage = exception.Message;
         }
-        catch (OperationCanceledException exception)
+        catch (OperationCanceledException)
         {
             _errorMessage =
-                $"Architecture generation was cancelled: {exception.Message}";
-        }
+                "Architecture generation was cancelled.";
+        } 
         catch
         {
             _errorMessage =
